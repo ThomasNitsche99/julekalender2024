@@ -27,35 +27,16 @@ now = datetime.now()
 current_month = now.month
 current_date= str(now.day)
 
+def get_todays_luke():
+    query = execute_query(supabase_client.table("calendaremojis").select(
+        "emojis, answer", count="exact").eq("day", current_date))
+    
+    data = query.data[0]
+    emoji, answer = data["emojis"], data["answer"]
+    return emoji, answer
 
-calendar = {
-    "1": {"emojis": "🚬🏇", "answer": "sigrid"},
-    "2": {"emojis": "🪙⬅️", "answer": "nickelback"},
-    "3": {"emojis": "👶🏼🏎️", "answer": "unge ferrari"},
-    "4": {"emojis": "🏇👧🏾", "answer": "rihanna"},
-    "5": {"emojis": "🍑🌲S", "answer": "astrid s"},
-    "6": {"emojis": "⬆️🪁", "answer": "highasakite"},
-    "7": {"emojis": "🚪🚪🎥🪩", "answer": "two door cinema club"},
-    "8": {"emojis": "⬅️🛣️🙍‍♂️🙍‍♂️", "answer": "backstreet boys"},
-    "9": {"emojis": "🐫", "answer": "kamelen"},
-    "10": {"emojis": "🐘🥅🛎️", "answer": "ellie goulding"},
-    "11": {"emojis": "💭🐲", "answer": "imagine dragons"},
-    "12": {"emojis": "👸", "answer": "queen"},
-    "13": {"emojis": "🔴🔥🌶️🍕", "answer": "red hot chili peppers"},
-    "14": {"emojis": "🐝1️⃣👀", "answer": "beyoncé"},
-    "15": {"emojis": "🥶🎶", "answer": "coldplay"},
-    "16": {"emojis": "🌱📅", "answer": "green day"},
-    "17": {"emojis": "🌊🚴‍♂️", "answer": "flo rida"},
-    "18": {"emojis": "🌶️👱‍♀️", "answer": "spice girls"},
-    "19": {"emojis": "⚫️🩷", "answer": "black pink"},
-    "20": {"emojis": "💳🐝", "answer": "cardi b"},
-    "21": {"emojis": "🫖📅🔚", "answer": "the weeknd"},
-    "22": {"emojis": "🪜🔥", "answer": "stig brenner"},
-    "23": {"emojis": "⛓🚬", "answer": "chainsmokers"},
-    "24": {"emojis": "🟤🪐", "answer": "bruno mars"},
-}
+todays_emoji, todays_answer = get_todays_luke()
 
-todays_luke = calendar[current_date]
 
 # Function for generating a unique value based on a name
 def generate_unique_value_based_on_name(name):
@@ -161,7 +142,7 @@ def main_widget():
         st.markdown(f'<p class="info_text_2"> Prøv å gjør brukernavnet ditt unikt!</p>', unsafe_allow_html=True)
         user_name = st.text_input("For å kunne være med er du nødt til å skrive inn navnet ditt her:", key="name", label_visibility="collapsed")
         if st.button("Bli med i kalenderen") and user_name != "":
-            #Regsiter user to database
+            #Register user to database
             with st.spinner('Gjør deg klar...'):
                 register_user(user_name)
                 st.rerun(scope="fragment")
@@ -171,11 +152,11 @@ def main_widget():
         #Fetching user data
         user_data, todays_data_for_user, guesses_left, answer_status = get_user(cookie) #Data for the user
         hearts = '🤍' * guesses_left #Hearts to display
-        # misses = 'X' * (3 - guesses_left)  # "X" for missed guesses
-        # display = hearts + misses  # Combine hearts and misses
+        misses = 'X' * (3 - guesses_left)  # "X" for missed guesses
+        display = hearts + misses  # Combine hearts and misses
         
         st.markdown(f'<h2 class="centered-title">Dagens luke #{current_date}</h2>', unsafe_allow_html=True)
-        st.markdown(f'<h1 class="emojies">{todays_luke["emojis"]}</h1>', unsafe_allow_html=True, )
+        st.markdown(f'<h1 class="emojies">{todays_emoji}</h1>', unsafe_allow_html=True, )
         
         # st.write(answer_status)
         
@@ -187,17 +168,16 @@ def main_widget():
         if guesses_left > 0:
         
             # Add an input field
-            st.markdown(f'<h4 class="heart-text">Gjenstående forsøk: <span class="hearts"> {hearts} </span> </h4>', unsafe_allow_html=True)
+            st.markdown(f'<h4 class="heart-text">Gjenstående forsøk: <span class="hearts"> {display} </span> </h4>', unsafe_allow_html=True)
             user_guess = st.text_input(label="Gjett:", placeholder="Skriv inn ditt svar her", label_visibility="collapsed")
             if st.button("Send inn svar") and user_guess != "":
                 
                 #If correct
-                if remove_whitespace_and_lower(user_guess) == remove_whitespace_and_lower(todays_luke["answer"]): #Cheking the answer
+                if remove_whitespace_and_lower(user_guess) == remove_whitespace_and_lower(todays_answer): #Cheking the answer
                     update_day_data_for_user(cookie, {"tries": guesses_left - 1, "correct": True})
                     st.rerun(scope="fragment")
                 #If wrong
                 else:
-                    st.session_state.session_answers = False
                     update_day_data_for_user(cookie, {"tries": guesses_left - 1, "correct": False})
                     st.rerun(scope="fragment")
               
